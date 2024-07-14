@@ -1,0 +1,27 @@
+#Peak Hours for Taxi Usage
+
+SELECT strftime('%H', tpep_pickup_datetime) AS pickup_hour, COUNT(*) AS trip_count
+FROM trips
+GROUP BY pickup_hour
+ORDER BY trip_count DESC
+LIMIT 5;
+
+#This query retrieves the top 5 peak hours for taxi usage based on the number of trips.
+
+#Effect of Passenger Count on Trip Fare
+
+SELECT passenger_count, AVG(fare_amount) AS avg_fare
+FROM trips
+GROUP BY passenger_count
+ORDER BY passenger_count;
+
+#This query calculates the average fare for trips based on the number of passengers.
+
+#Trends in Usage Over the Year
+
+SELECT strftime('%m', date) AS month, SUM(total_trips) AS total_trips
+FROM trips
+GROUP BY month
+ORDER BY month;
+
+#This query shows the total number of trips per month, indicating trends in taxi usage over the year.
