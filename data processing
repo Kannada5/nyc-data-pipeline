@@ -1,0 +1,53 @@
+import pandas as pd
+import os
+
+# Directory where the downloaded files are saved
+data_dir = "nyc_taxi_data_2019"
+
+# List to hold DataFrames for each month
+data_frames = []
+
+def load_and_clean_data(file_path):
+    df = pd.read_csv(file_path)
+
+    # Remove rows with any missing or corrupt data
+    df = df.dropna()
+
+    # Convert date columns to datetime
+    df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
+    df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
+
+    # Remove trips with zero or negative durations and distances
+    df = df[df['tpep_dropoff_datetime'] > df['tpep_pickup_datetime']]
+    df = df[df['trip_distance'] > 0]
+
+    # Derive new columns: trip_duration (in minutes) and average_speed (in mph)
+    df['trip_duration'] = (df['tpep_dropoff_datetime'] - df['tpep_pickup_datetime']).dt.total_seconds() / 60
+    df['average_speed'] = df['trip_distance'] / (df['trip_duration'] / 60)
+
+    return df
+
+def main():
+    # Process each CSV file
+    for file_name in os.listdir(data_dir):
+        if file_name.endswith(".csv"):
+            file_path = os.path.join(data_dir, file_name)
+            df = load_and_clean_data(file_path)
+            data_frames.append(df)
+
+    # Concatenate all DataFrames into one
+    combined_df = pd.concat(data_frames, ignore_index=True)
+
+    # Aggregate data
+    combined_df['date'] = combined_df['tpep_pickup_datetime'].dt.date
+    aggregated_df = combined_df.groupby('date').agg({
+        'VendorID': 'count',  # Total trips
+        'fare_amount': 'mean'  # Average fare
+    }).rename(columns={'VendorID': 'total_trips', 'fare_amount': 'average_fare'})
+
+    # Save the aggregated data to a CSV file
+    aggregated_df.to_csv('aggregated_taxi_data_2019.csv', index=True)
+    print("Aggregated data saved to 'aggregated_taxi_data_2019.csv'")
+
+if __name__ == "__main__":
+    main()
