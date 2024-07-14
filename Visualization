@@ -1,0 +1,72 @@
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Connect to SQLite database
+conn = sqlite3.connect('nyc_taxi_data.db')
+
+# Peak hours for taxi usage query
+peak_hours_query = """
+SELECT strftime('%H', tpep_pickup_datetime) AS pickup_hour, COUNT(*) AS trip_count
+FROM trips
+GROUP BY pickup_hour
+ORDER BY trip_count DESC
+LIMIT 5;
+"""
+
+# Passenger count vs trip fare query
+passenger_count_query = """
+SELECT passenger_count, AVG(fare_amount) AS avg_fare
+FROM trips
+GROUP BY passenger_count
+ORDER BY passenger_count;
+"""
+
+# Usage trends over the year query
+usage_trends_query = """
+SELECT strftime('%m', date) AS month, SUM(total_trips) AS total_trips
+FROM trips
+GROUP BY month
+ORDER BY month;
+"""
+
+# Execute queries and load results into Pandas DataFrames
+peak_hours_df = pd.read_sql_query(peak_hours_query, conn)
+passenger_count_df = pd.read_sql_query(passenger_count_query, conn)
+usage_trends_df = pd.read_sql_query(usage_trends_query, conn)
+
+# Close the database connection
+conn.close()
+
+# Plotting visualizations
+# 1. Peak hours for taxi usage
+plt.figure(figsize=(10, 6))
+plt.bar(peak_hours_df['pickup_hour'], peak_hours_df['trip_count'], color='skyblue')
+plt.xlabel('Pickup Hour')
+plt.ylabel('Trip Count')
+plt.title('Peak Hours for Taxi Usage')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# 2. Passenger count vs trip fare
+plt.figure(figsize=(8, 5))
+plt.bar(passenger_count_df['passenger_count'], passenger_count_df['avg_fare'], color='lightgreen')
+plt.xlabel('Passenger Count')
+plt.ylabel('Average Fare ($)')
+plt.title('Effect of Passenger Count on Trip Fare')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# 3. Usage trends over the year
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+plt.figure(figsize=(10, 6))
+plt.plot(months, usage_trends_df['total_trips'], marker='o', linestyle='-', color='orange')
+plt.xlabel('Month')
+plt.ylabel('Total Trips')
+plt.title('Taxi Usage Trends Over the Year')
+plt.grid(True)
+plt.xticks(months)
+plt.tight_layout()
+plt.show()
