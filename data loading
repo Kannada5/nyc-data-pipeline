@@ -1,0 +1,30 @@
+import pandas as pd
+import sqlite3
+from sqlalchemy import create_engine
+
+# Load the aggregated data from the CSV file
+aggregated_data_file = 'aggregated_taxi_data_2019.csv'
+df = pd.read_csv(aggregated_data_file, parse_dates=['date'])
+
+# Create a connection to the SQLite database
+engine = create_engine('sqlite:///nyc_taxi_data.db')
+conn = engine.connect()
+
+# Define the schema and create the table
+create_table_query = """
+CREATE TABLE IF NOT EXISTS trips (
+    date DATE PRIMARY KEY,
+    total_trips INTEGER,
+    average_fare REAL
+);
+"""
+
+conn.execute(create_table_query)
+
+# Load data into the SQLite database
+df.to_sql('trips', conn, if_exists='replace', index=False)
+
+print("Data loaded into the SQLite database successfully.")
+
+# Close the connection
+conn.close()
